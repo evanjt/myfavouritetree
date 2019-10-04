@@ -1,10 +1,11 @@
-# Carto III "template-project"
+# Carto III "web-app-evthomas"
 
-Template project for the Carto III student web app
+Carto III student web app "web-app-evthomas"
 
 ### Source code
 
-- [gitlab.ethz.ch/ikg-carto-3/template-project](https://gitlab.ethz.ch/ikg-carto-3/template-project)
+- [gitlab.ethz.ch/ikg-carto-3/web-app-evthomas](https://gitlab.ethz.ch/ikg-carto-3/web-app-evthomas)
+- based on [gitlab.ethz.ch/ikg-carto-3/template-project](https://gitlab.ethz.ch/ikg-carto-3/template-project)
 
 ### Links
 
