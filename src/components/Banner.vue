@@ -5,7 +5,7 @@
         <h2>{{ title }}</h2>
       </div>
       <div class="logo">
-        <slot />
+        <img alt="Tree logo" height="60px" width=auto src="../assets/tree-green.png">
       </div>
       <br style="clear:both" />
     </div>
@@ -26,7 +26,7 @@ export default {
 }
 
 .bannerInner {
-  padding: 1em;
+  padding: 0em;
 }
 
 .title {
@@ -34,11 +34,14 @@ export default {
 }
 
 .title h2 {
-  margin: 0;
+  margin: 10;
   padding: 0;
+  font-family: "Monospace";
 }
 
 .logo {
+  position: relative;
   float: right;
+  top: 0px;
 }
 </style>

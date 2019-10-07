@@ -1,7 +1,7 @@
 <template>
   <div class="map">
     <div class="map-inner">
-      <h3>This is the placehlder for the map</h3>
+      <h3>This is the placeholder for the map</h3>
       <p>
         Current selected menu entry: <b>{{ activeEntry }}</b>
       </p>

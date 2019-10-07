@@ -3,7 +3,6 @@
     <div class="layout">
       <div class="layout-header">
         <Banner :title="title">
-          <img alt="ETH Logo" src="./assets/ethz_logo_white.svg" />
         </Banner>
       </div>
       <div class="layout-body">
@@ -45,7 +44,7 @@ export default {
   },
   data() {
     return {
-      title: "Carto III - Interactive web map project",
+      title: "MyFavouriteTree Zürich",
       menuEntries: ["alpha", "beta", "gamma", "delta", "epsilon"],
       activeEntry: null
     };
@@ -73,7 +72,7 @@ body {
 }
 
 body {
-  background-color: #1f407a;
+  background-color: #006837;
   font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -94,7 +93,10 @@ a:hover {
 .layout-content {
   padding: 1em;
 }
-.layout .layout-header,
+.layout .layout-header {
+  text-align: right;
+  height: 10vh;
+}
 .layout .layout-footer {
   background: rgba(255, 255, 255, 0);
 }
