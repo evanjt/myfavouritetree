@@ -1,10 +1,88 @@
 <template>
   <div class="map">
-    <div class="map-inner">
-      <h3>This is the placeholder for the map</h3>
-      <p>
-        Current selected menu entry: <b>{{ activeEntry }}</b>
-      </p>
+    <div class="vl">
+      <vl-map
+        :load-tiles-while-animating="true"
+        :load-tiles-while-interacting="true"
+        data-projection="EPSG:3857"
+        class="vl-map"
+        ref="vl-map"
+      >
+        <vl-view
+          :zoom.sync="zoom"
+          :center.sync="center"
+          :rotation.sync="rotation"
+          class="vl-view"
+          ref="vl-view"
+        ></vl-view>
+
+        <!-- base maps -->
+        <vl-layer-group id="base-group" :z-idnex="10">
+          <vl-layer-tile
+            id="pk25komb"
+            :visible="activeBasemapId === 'PKomb'"
+            :z-idnex="11"
+          >
+            <vl-source-wms
+              :url="baseUrl + '/geoserver/carto3/wms'"
+              :layers="'carto3:pk25komb_Latest'"
+            ></vl-source-wms>
+          </vl-layer-tile>
+          <vl-layer-image
+            id="image"
+            :visible="activeBasemapId === 'PKrel'"
+            :z-idnex="12"
+          >
+            <vl-source-image-static
+              :url="'data/pk25krel.png'"
+              :size="[1770, 1722]"
+              :extent="[947616.2032, 5998318.4717, 954233.3099, 6004597.5617]"
+            ></vl-source-image-static>
+          </vl-layer-image>
+          <vl-layer-tile
+            id="basemap"
+            :visible="activeBasemapId === 'Hydro'"
+            :z-idnex="13"
+          >
+            <vl-source-wms
+              :url="baseUrl + '/geoserver/carto3/wms'"
+              :layers="'carto3:basemap'"
+            ></vl-source-wms>
+          </vl-layer-tile>
+          <vl-layer-tile
+            id="osm"
+            :visible="activeBasemapId === 'OSM'"
+            :z-idnex="14"
+          >
+            <vl-source-osm></vl-source-osm>
+          </vl-layer-tile>
+        </vl-layer-group>
+
+        <!-- layers -->
+        <vl-layer-group id="layer-group" :z-idnex="20">
+          <vl-layer-tile
+            id="trees"
+            :visible="activeLayerIds.includes('trees')"
+            :z-idnex="21"
+          >
+            <vl-source-wms
+              :url="baseUrl + '/geoserver/carto3/wms'"
+              :layers="'carto3:Baumkataster'"
+            ></vl-source-wms>
+          </vl-layer-tile>
+          <vl-layer-tile
+            id="rivers"
+            :visible="activeLayerIds.includes('rivers')"
+            :z-idnex="22"
+          >
+            <vl-source-wms
+              :url="baseUrl + '/geoserver/carto3/wms'"
+              :layers="'carto3:river_network'"
+            ></vl-source-wms>
+          </vl-layer-tile>
+        </vl-layer-group>
+
+      </vl-map>
     </div>
   </div>
 </template>
@@ -12,7 +90,31 @@
 <script>
 export default {
   props: {
-    activeEntry: String
+    activeBasemapId: String,
+    activeLayerIds: Array
+  },
+  data() {
+    return {
+      baseUrl:
+        process.env.NODE_ENV === "development" ? "http://carto19.ethz.ch" : "",
+      center: [951000, 6002000],
+      zoom: 16,
+      rotation: 0
+    };
+  },
+  created() {
+    this.resetWell();
+  },
+  methods: {
+    resize() {
+      if (
+        this.$refs["vl-map"] &&
+        this.$refs["vl-map"].updateSize &&
+        this.$refs["vl-map"].$map
+      ) {
+        this.$refs["vl-map"].updateSize();
+      }
+    },
   }
 };
 </script>
@@ -20,10 +122,18 @@ export default {
 <style scoped>
 .map {
   background-color: rgba(255, 255, 255, 0.1);
+  width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+  position: relative;
 }
+
+.vl,
+.vl-map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+
 </style>

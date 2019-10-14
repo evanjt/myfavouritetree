@@ -3,24 +3,37 @@
     <div class="layout">
       <div class="layout-header">
         <Banner :title="title">
+          <img alt="ETH Logo" src="./assets/ethz_logo_white.svg" />
         </Banner>
       </div>
       <div class="layout-body">
         <section class="layout-content">
-          <Map :activeEntry="activeEntry" />
+          <Map
+            :activeBasemapId="activeBasemapId"
+            :activeLayerIds="activeLayerIds"
+            ref="map"
+          />
         </section>
         <div class="layout-sidebar-1 hg-sidebar">
+          <h3>Layers:</h3>
           <Menu
-            :menuEntries="menuEntries"
-            :activeEntry="activeEntry"
-            @activeEntryChanged="activeEntryChanged"
+            :menuEntries="layers"
+            :activeEntries="activeLayerIds"
+            @activeEntryChanged="activeLayerChanged"
+          />
+          <h3>Basemaps:</h3>
+          <Menu
+            :menuEntries="basemaps"
+            :activeEntries="[activeBasemapId]"
+            @activeEntryChanged="activeBasemapChanged"
           />
         </div>
-        <!--
-          <div class="layout-sidebar-2 hg-sidebar">
-            <p>Sidebar Right</p>
-          </div>
-        -->
+        <transition
+          name="slide-fade"
+          v-on:enter="resizeMap"
+          v-on:after-leave="resizeMap"
+        >
+        </transition>
       </div>
 
       <div class="layout-footer">
@@ -45,16 +58,51 @@ export default {
   data() {
     return {
       title: "MyFavouriteTree Zürich",
-      menuEntries: ["alpha", "beta", "gamma", "delta", "epsilon"],
-      activeEntry: null
+      layers: [
+        {
+          id: "trees",
+          title: "Trees (WMS)"
+        }
+      ],
+      activeLayerIds: [],
+      basemaps: [
+        {
+          id: "PKomb",
+          title: "Pixel Map without Relief (WMS)"
+        },
+        {
+          id: "PKrel",
+          title: "Pixel Map with Relief (IMAGE)"
+        },
+        {
+          id: "Hydro",
+          title: "Lakes and Rivers on Pixel Map (WMS - Combined)"
+        },
+        {
+          id: "OSM",
+          title: "OpenStreetMap (WMTS)"
+        }
+      ],
+      activeBasemapId: null
     };
   },
   created() {
-    this.activeEntry = this.menuEntries[0];
+    // set first base map id as activeBasemapId
+    this.activeBasemapId = this.basemaps[0].id;
+    // add id of first layer to activeLayerIds
+    this.activeLayerIds.push(this.layers[0].id);
   },
   methods: {
-    activeEntryChanged(entry) {
-      this.activeEntry = entry;
+    activeBasemapChanged(basemapId) {
+      this.activeBasemapId = basemapId;
+    },
+    activeLayerChanged(layerId) {
+      this.activeLayerIds.includes(layerId)
+        ? this.activeLayerIds.splice(this.activeLayerIds.indexOf(layerId), 1)
+        : this.activeLayerIds.push(layerId);
+    },
+    resizeMap() {
+      this.$refs["map"].resize();
     }
   }
 };
@@ -93,15 +141,13 @@ a:hover {
 .layout-content {
   padding: 1em;
 }
-.layout .layout-header {
-  text-align: right;
-  height: 10vh;
-}
+.layout .layout-header,
 .layout .layout-footer {
   background: rgba(255, 255, 255, 0);
 }
 .hg-sidebar {
   margin-left: 1em;
+  min-width: 500px;
 }
 .layout-footer {
   text-align: right;
@@ -109,6 +155,7 @@ a:hover {
 
 .layout {
   min-height: 100vh;
+  overflow-x: hidden;
 }
 .layout,
 .layout-body {
@@ -129,5 +176,17 @@ a:hover {
   .hg-sidebar {
     flex: 0 0 260px;
   }
+}
+
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 1s ease;
+}
+.slide-fade-leave-active {
+  transform: translate(-100%, 0);
+}
+.slide-fade-enter,
+.slide-fade-leave-to {
+  transform: translate(100%, 0);
 }
 </style>
