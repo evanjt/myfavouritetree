@@ -62,6 +62,10 @@ export default {
         {
           id: "trees",
           title: "Trees (WMS)"
+        },
+        {
+          id: "countries",
+          title: "Worldwide countries (WMS)"
         }
       ],
       activeLayerIds: [],

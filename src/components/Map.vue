@@ -60,24 +60,24 @@
 
         <!-- layers -->
         <vl-layer-group id="layer-group" :z-idnex="20">
-          <vl-layer-tile
+<!--          <vl-layer-tile
             id="trees"
             :visible="activeLayerIds.includes('trees')"
             :z-idnex="21"
           >
-            <vl-source-wms
-              :url="baseUrl + '/geoserver/carto3/wms'"
+            <vl-source-wfs
+              :url:"http://carto19.ethz.ch/geoserver/carto3/wfs/?service=WFS&version=1.1.0&request=GetFeature&typename=carto3:Baumkataster"
               :layers="'carto3:Baumkataster'"
-            ></vl-source-wms>
-          </vl-layer-tile>
+            ></vl-source-wfs>
+          </vl-layer-tile>-->
           <vl-layer-tile
             id="rivers"
-            :visible="activeLayerIds.includes('rivers')"
+            :visible="activeLayerIds.includes('countries')"
             :z-idnex="22"
           >
             <vl-source-wms
               :url="baseUrl + '/geoserver/carto3/wms'"
-              :layers="'carto3:river_network'"
+              :layers="'carto3:world_borders'"
             ></vl-source-wms>
           </vl-layer-tile>
         </vl-layer-group>
@@ -95,6 +95,25 @@ export default {
   },
   data() {
     return {
+      layers: [
+        {
+            id: 'trees',
+            title: 'Trees (WFS)',
+            cmp: 'vl-layer-vector',
+            visible: false,
+            renderMode: 'image',
+            source: {
+              cmp: 'vl-source-vector',
+              features: [],
+              url () {
+                return 'http://carto19.ethz.ch/geoserver/carto3/wfs/?service=WFS&version=1.1.0&request=GetFeature&typename=carto3:Baumkataster'
+              },
+//               strategyFactory () {
+//                 return loadingBBox
+//               },
+            },
+        }
+      ],
       baseUrl:
         process.env.NODE_ENV === "development" ? "http://carto19.ethz.ch" : "",
       center: [951000, 6002000],
