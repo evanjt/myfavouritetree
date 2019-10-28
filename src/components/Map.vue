@@ -70,16 +70,6 @@
               :layers="'carto3:world_borders'"
             ></vl-source-wms>
           </vl-layer-tile>
-          <vl-layer-tile
-            id="rivers"
-            :visible="activeLayerIds.includes('rivers')"
-            :z-index="22"
-          >
-            <vl-source-wms
-              :url="baseUrl + '/geoserver/carto3/wms'"
-              :layers="'carto3:river_network'"
-            ></vl-source-wms>
-          </vl-layer-tile>
           <!-- trees WFS layer -->
           <vl-layer-vector
             id="trees"
@@ -90,8 +80,8 @@
               :url="urlFunction"
               :strategy-factory="loadingStrategyFactory"
             />
-<vl-style-box>
-              <vl-style-circle :radius="5">
+            <vl-style-box>
+              <vl-style-circle :radius="10">
                 <vl-style-fill color="lightblue"></vl-style-fill>
                 <vl-style-stroke
                   :color="[0, 0, 255]"
@@ -111,7 +101,13 @@
           :condition="pointerMove"
         >
           <vl-style-box>
-            <vl-style-stroke color="yellow" :width="10"></vl-style-stroke>
+            <vl-style-circle :radius="10">
+                <vl-style-fill color="red"></vl-style-fill>
+                <vl-style-stroke
+                  :color="[0, 0, 255]"
+                  :width="2"
+                ></vl-style-stroke>
+              </vl-style-circle>
           </vl-style-box>
         </vl-interaction-select>
         <vl-interaction-select
@@ -121,8 +117,15 @@
           :hit-tolerance="10"
           :condition="singleClick"
         >
+        // Make the point green when clicked
           <vl-style-box>
-            <vl-style-stroke color="green" :width="10"></vl-style-stroke>
+            <vl-style-circle :radius="10">
+                <vl-style-fill color="green"></vl-style-fill>
+                <vl-style-stroke
+                  :color="[0, 0, 255]"
+                  :width="2"
+                ></vl-style-stroke>
+              </vl-style-circle>
           </vl-style-box>
         </vl-interaction-select>
       </vl-map>
@@ -136,8 +139,10 @@
         <h4>Selected Features:</h4>
         <ul>
           <li v-for="feature in selectedFeatures" :key="feature.id">
-            <b>{{feature.id}} {{feature.properties.NAME}}</b>
-            (Gewässerlaufnummer: {{feature.properties.GWL_NR}})
+            <b>{{feature.id}} {{feature.properties.baumnamede}}</b><br>
+            Species: {{feature.properties.baumgattun}} {{feature.properties.baumartlat}}<br>
+            Category: {{feature.properties.kategorie}}<br>
+            Locale: {{feature.properties.quartier}}
           </li>
         </ul>
       </div>
@@ -145,8 +150,10 @@
         <h4>Hovered Features:</h4>
         <ul>
           <li v-for="feature in hoveredFeatures" :key="feature.id">
-            <b>{{feature.id}} {{feature.properties.NAME}}</b>
-            (Gewässerlaufnummer: {{feature.properties.GWL_NR}})
+            <b>{{feature.id}} {{feature.properties.baumnamede}}</b><br>
+            Species: {{feature.properties.baumgattun}} {{feature.properties.baumartlat}}<br>
+            Category: {{feature.properties.kategorie}}<br>
+            Locale: {{feature.properties.quartier}}
           </li>
         </ul>
       </div>
@@ -241,4 +248,10 @@ export default {
 .trees-box-inner {
   margin: 0 50px;
 }
+
+.transparent {
+   background-color: white!important;
+   opacity: 0.65;
+   border-color: transparent!important;
+ }
 </style>
