@@ -61,7 +61,7 @@ export default {
       layers: [
         {
           id: "trees",
-          title: "Trees (WMS)"
+          title: "Trees (WFS)"
         },
         {
           id: "countries",

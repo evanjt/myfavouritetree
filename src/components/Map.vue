@@ -17,11 +17,11 @@
         ></vl-view>
 
         <!-- base maps -->
-        <vl-layer-group id="base-group" :z-idnex="10">
+        <vl-layer-group id="base-group" :z-index="10">
           <vl-layer-tile
             id="pk25komb"
             :visible="activeBasemapId === 'PKomb'"
-            :z-idnex="11"
+            :z-index="11"
           >
             <vl-source-wms
               :url="baseUrl + '/geoserver/carto3/wms'"
@@ -31,10 +31,10 @@
           <vl-layer-image
             id="image"
             :visible="activeBasemapId === 'PKrel'"
-            :z-idnex="12"
+            :z-index="12"
           >
             <vl-source-image-static
-              :url="'data/pk25krel.png'"
+              :url="baseUrl + 'data/pk25krel.png'"
               :size="[1770, 1722]"
               :extent="[947616.2032, 5998318.4717, 954233.3099, 6004597.5617]"
             ></vl-source-image-static>
@@ -42,7 +42,7 @@
           <vl-layer-tile
             id="basemap"
             :visible="activeBasemapId === 'Hydro'"
-            :z-idnex="13"
+            :z-index="13"
           >
             <vl-source-wms
               :url="baseUrl + '/geoserver/carto3/wms'"
@@ -52,42 +52,112 @@
           <vl-layer-tile
             id="osm"
             :visible="activeBasemapId === 'OSM'"
-            :z-idnex="14"
+            :z-index="14"
           >
             <vl-source-osm></vl-source-osm>
           </vl-layer-tile>
         </vl-layer-group>
 
         <!-- layers -->
-        <vl-layer-group id="layer-group" :z-idnex="20">
-<!--          <vl-layer-tile
-            id="trees"
-            :visible="activeLayerIds.includes('trees')"
-            :z-idnex="21"
-          >
-            <vl-source-wfs
-              :url:"http://carto19.ethz.ch/geoserver/carto3/wfs/?service=WFS&version=1.1.0&request=GetFeature&typename=carto3:Baumkataster"
-              :layers="'carto3:Baumkataster'"
-            ></vl-source-wfs>
-          </vl-layer-tile>-->
+        <vl-layer-group id="layer-group" :z-index="20">
           <vl-layer-tile
-            id="rivers"
+            id="countries"
             :visible="activeLayerIds.includes('countries')"
-            :z-idnex="22"
+            :z-index="21"
           >
             <vl-source-wms
               :url="baseUrl + '/geoserver/carto3/wms'"
               :layers="'carto3:world_borders'"
             ></vl-source-wms>
           </vl-layer-tile>
+          <vl-layer-tile
+            id="rivers"
+            :visible="activeLayerIds.includes('rivers')"
+            :z-index="22"
+          >
+            <vl-source-wms
+              :url="baseUrl + '/geoserver/carto3/wms'"
+              :layers="'carto3:river_network'"
+            ></vl-source-wms>
+          </vl-layer-tile>
+          <!-- trees WFS layer -->
+          <vl-layer-vector
+            id="trees"
+            :visible="activeLayerIds.includes('trees')"
+            :z-index="23"
+          >
+            <vl-source-vector
+              :url="urlFunction"
+              :strategy-factory="loadingStrategyFactory"
+            />
+<vl-style-box>
+              <vl-style-circle :radius="5">
+                <vl-style-fill color="lightblue"></vl-style-fill>
+                <vl-style-stroke
+                  :color="[0, 0, 255]"
+                  :width="2"
+                ></vl-style-stroke>
+              </vl-style-circle>
+            </vl-style-box>
+          </vl-layer-vector>
         </vl-layer-group>
 
+        <!-- trees interactions -->
+        <vl-interaction-select
+          v-if="activeLayerIds.includes('trees')"
+          :layers="['trees']"
+          :features.sync="hoveredFeatures"
+          :hit-tolerance="10"
+          :condition="pointerMove"
+        >
+          <vl-style-box>
+            <vl-style-stroke color="yellow" :width="10"></vl-style-stroke>
+          </vl-style-box>
+        </vl-interaction-select>
+        <vl-interaction-select
+          v-if="activeLayerIds.includes('trees')"
+          :layers="['trees']"
+          :features.sync="selectedFeatures"
+          :hit-tolerance="10"
+          :condition="singleClick"
+        >
+          <vl-style-box>
+            <vl-style-stroke color="green" :width="10"></vl-style-stroke>
+          </vl-style-box>
+        </vl-interaction-select>
       </vl-map>
+    </div>
+    <!-- trees information box -->
+    <div
+      v-if="activeLayerIds.includes('trees') && (selectedFeatures.length > 0 || hoveredFeatures.length > 0)"
+      class="trees-box"
+    >
+      <div v-if="selectedFeatures.length > 0" class="trees-box-inner">
+        <h4>Selected Features:</h4>
+        <ul>
+          <li v-for="feature in selectedFeatures" :key="feature.id">
+            <b>{{feature.id}} {{feature.properties.NAME}}</b>
+            (Gewässerlaufnummer: {{feature.properties.GWL_NR}})
+          </li>
+        </ul>
+      </div>
+      <div v-if="hoveredFeatures.length > 0" class="trees-box-inner">
+        <h4>Hovered Features:</h4>
+        <ul>
+          <li v-for="feature in hoveredFeatures" :key="feature.id">
+            <b>{{feature.id}} {{feature.properties.NAME}}</b>
+            (Gewässerlaufnummer: {{feature.properties.GWL_NR}})
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import { singleClick, pointerMove } from "ol/events/condition";
+import { loadingBBox } from "vuelayers/lib/ol-ext";
+
 export default {
   props: {
     activeBasemapId: String,
@@ -95,36 +165,39 @@ export default {
   },
   data() {
     return {
-      layers: [
-        {
-            id: 'trees',
-            title: 'Trees (WFS)',
-            cmp: 'vl-layer-vector',
-            visible: false,
-            renderMode: 'image',
-            source: {
-              cmp: 'vl-source-vector',
-              features: [],
-              url () {
-                return 'http://carto19.ethz.ch/geoserver/carto3/wfs/?service=WFS&version=1.1.0&request=GetFeature&typename=carto3:Baumkataster'
-              },
-//               strategyFactory () {
-//                 return loadingBBox
-//               },
-            },
-        }
-      ],
       baseUrl:
-        process.env.NODE_ENV === "development" ? "http://carto19.ethz.ch" : "",
+      process.env.NODE_ENV === "development" ? "http://carto19.ethz.ch" : "",
       center: [951000, 6002000],
       zoom: 16,
-      rotation: 0
+      rotation: 0,
+      activeWell: null,
+      hoveredFeatures: [],
+      selectedFeatures: []
     };
   },
-  created() {
-    this.resetWell();
+  computed: {
+    singleClick() {
+      return singleClick;
+    },
+    pointerMove() {
+      return pointerMove;
+    }
   },
   methods: {
+    urlFunction(extent, resolution, projection) {
+      return (
+        "/geoserver/carto3/ows?service=WFS&version=1.1.0&request=GetFeature&typeName=carto3%3ABaumkataster&outputFormat=application%2Fjson" +
+        "&srsname=" +
+        projection +
+        "&bbox=" +
+        extent.join(",") +
+        "," +
+        projection
+      );
+    },
+    loadingStrategyFactory() {
+      return loadingBBox;
+    },
     resize() {
       if (
         this.$refs["vl-map"] &&
@@ -155,4 +228,17 @@ export default {
   right: 0;
 }
 
+.trees-box {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: black;
+  pointer-events: none;
+}
+
+.trees-box-inner {
+  margin: 0 50px;
+}
 </style>
