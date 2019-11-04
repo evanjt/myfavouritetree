@@ -60,21 +60,29 @@
 
         <!-- layers -->
         <vl-layer-group id="layer-group" :z-index="20">
-          <vl-layer-tile
+          <vl-layer-vector
             id="countries"
             :visible="activeLayerIds.includes('countries')"
             :z-index="21"
           >
-            <vl-source-wms
-              :url="baseUrl + '/geoserver/carto3/wms'"
-              :layers="'carto3:world_borders'"
-            ></vl-source-wms>
-          </vl-layer-tile>
+          <vl-source-vector
+              :url="urlFunction_countries"
+              :strategy-factory="loadingStrategyFactory"
+            />
+            <vl-style-box>
+                <vl-style-fill color="brown"></vl-style-fill>
+                <vl-style-stroke
+                  :color="[0, 20, 80]"
+                  :width="4"
+                ></vl-style-stroke>
+            </vl-style-box>
+          </vl-layer-vector>
+
           <!-- trees WFS layer -->
           <vl-layer-vector
             id="trees"
             :visible="activeLayerIds.includes('trees')"
-            :z-index="23"
+            :z-index="22"
           >
             <vl-source-vector
               :url="urlFunction"
@@ -110,6 +118,7 @@
               </vl-style-circle>
           </vl-style-box>
         </vl-interaction-select>
+
         <vl-interaction-select
           v-if="activeLayerIds.includes('trees')"
           :layers="['trees']"
@@ -128,6 +137,35 @@
               </vl-style-circle>
           </vl-style-box>
         </vl-interaction-select>
+
+
+
+        <!-- countries interaction -->
+
+        <vl-interaction-select
+          v-if="activeLayerIds.includes('countries')"
+          :layers="['countries']"
+          :hit-tolerance="10"
+          :condition="singleClick"
+        >
+        <li v-for="country in trees" :key="COUNTRY">
+
+            <vl-style-box>
+                <vl-style-circle :radius="10">
+                    <vl-style-fill color="green"></vl-style-fill>
+                    <vl-style-stroke
+                    :color="[0, 0, 255]"
+                    :width="2"
+                    ></vl-style-stroke>
+                </vl-style-circle>
+          </vl-style-box>
+            <div v-if="country.properties.COUNTRY == selectedFeature.properties.NAME" class="tree-active">
+            </div>
+
+        </li>
+
+        </vl-interaction-select>
+
       </vl-map>
     </div>
     <!-- trees information box -->
@@ -139,10 +177,11 @@
         <h4>Selected Features:</h4>
         <ul>
           <li v-for="feature in selectedFeatures" :key="feature.id">
-            <b>{{feature.id}} {{feature.properties.baumnamede}}</b><br>
+            <b>{{feature.properties.baumnamede}}</b> ({{feature.properties.baumnummer}})<br>
             Species: {{feature.properties.baumgattun}} {{feature.properties.baumartlat}}<br>
             Category: {{feature.properties.kategorie}}<br>
-            Locale: {{feature.properties.quartier}}
+            Locale: {{feature.properties.quartier}}<br>
+            Associated European country: {{feature.properties.COUNTRY}}
           </li>
         </ul>
       </div>
@@ -150,14 +189,19 @@
         <h4>Hovered Features:</h4>
         <ul>
           <li v-for="feature in hoveredFeatures" :key="feature.id">
-            <b>{{feature.id}} {{feature.properties.baumnamede}}</b><br>
+            <b>{{feature.properties.baumnamede}}</b> ({{feature.properties.baumnummer}})<br>
             Species: {{feature.properties.baumgattun}} {{feature.properties.baumartlat}}<br>
             Category: {{feature.properties.kategorie}}<br>
-            Locale: {{feature.properties.quartier}}
+            Locale: {{feature.properties.quartier}}<br>
+            Associated European country: {{feature.properties.COUNTRY}}
           </li>
         </ul>
       </div>
     </div>
+
+
+  <!-- countries -->
+  </div>
   </div>
 </template>
 
@@ -177,7 +221,7 @@ export default {
       center: [951000, 6002000],
       zoom: 16,
       rotation: 0,
-      activeWell: null,
+      activeTree: false,
       hoveredFeatures: [],
       selectedFeatures: []
     };
@@ -202,6 +246,17 @@ export default {
         projection
       );
     },
+    urlFunction_countries(extent, resolution, projection) {
+      return (
+        "/geoserver/carto3/ows?service=WFS&version=1.1.0&request=GetFeature&typeName=carto3:world_borders&outputFormat=application%2Fjson" +
+        "&srsname=" +
+        projection +
+        "&bbox=" +
+        extent.join(",") +
+        "," +
+        projection
+      );
+    },
     loadingStrategyFactory() {
       return loadingBBox;
     },
@@ -214,6 +269,9 @@ export default {
         this.$refs["vl-map"].updateSize();
       }
     },
+    treeActive: function() {
+        this.setAttribute("class", "tree-active");
+    }
   }
 };
 </script>
@@ -247,6 +305,14 @@ export default {
 
 .trees-box-inner {
   margin: 0 50px;
+}
+
+.tree-active {
+  color: red;
+}
+
+.tree-disabled {
+  color: white;
 }
 
 .transparent {
