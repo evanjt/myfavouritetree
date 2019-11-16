@@ -71,6 +71,10 @@ export default {
       activeLayerIds: [],
       basemaps: [
         {
+          id: "OSM",
+          title: "OpenStreetMap (WMTS)"
+        },
+        {
           id: "PKomb",
           title: "Pixel Map without Relief (WMS)"
         },
@@ -81,10 +85,6 @@ export default {
         {
           id: "Hydro",
           title: "Lakes and Rivers on Pixel Map (WMS - Combined)"
-        },
-        {
-          id: "OSM",
-          title: "OpenStreetMap (WMTS)"
         }
       ],
       activeBasemapId: null
