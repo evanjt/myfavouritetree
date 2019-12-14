@@ -1,6 +1,8 @@
 <template>
   <div class="map">
-    <div class="vl">
+
+    <div class="vl-map">
+
       <vl-map
         :load-tiles-while-animating="true"
         :load-tiles-while-interacting="true"
@@ -17,38 +19,6 @@
         ></vl-view>
 
         <!-- base maps -->
-        <vl-layer-group id="base-group" :z-index="10">
-          <vl-layer-tile
-            id="pk25komb"
-            :visible="activeBasemapId === 'PKomb'"
-            :z-index="11"
-          >
-            <vl-source-wms
-              :url="baseUrl + '/geoserver/carto3/wms'"
-              :layers="'carto3:pk25komb_Latest'"
-            ></vl-source-wms>
-          </vl-layer-tile>
-          <vl-layer-image
-            id="image"
-            :visible="activeBasemapId === 'PKrel'"
-            :z-index="12"
-          >
-            <vl-source-image-static
-              :url="baseUrl + 'data/pk25krel.png'"
-              :size="[1770, 1722]"
-              :extent="[947616.2032, 5998318.4717, 954233.3099, 6004597.5617]"
-            ></vl-source-image-static>
-          </vl-layer-image>
-          <vl-layer-tile
-            id="basemap"
-            :visible="activeBasemapId === 'Hydro'"
-            :z-index="13"
-          >
-            <vl-source-wms
-              :url="baseUrl + '/geoserver/carto3/wms'"
-              :layers="'carto3:basemap'"
-            ></vl-source-wms>
-          </vl-layer-tile>
           <vl-layer-tile
             id="osm"
             :visible="activeBasemapId === 'OSM'"
@@ -56,28 +26,12 @@
           >
             <vl-source-osm></vl-source-osm>
           </vl-layer-tile>
-        </vl-layer-group>
-
-        <!-- layers -->
-        <vl-layer-group id="layer-group" :z-index="20">
-          <vl-layer-vector id="countries" :visible="activeLayerIds.includes('countries')" :z-index="21">
-          <vl-source-vector :url="urlFunction_countries" :strategy-factory="loadingStrategyFactory"/>
-            <vl-style-box>
-                <vl-style-fill color="brown"></vl-style-fill>
-                <vl-style-stroke :color="[0, 20, 80]" :width="4"></vl-style-stroke>
-            </vl-style-box>
-
-          </vl-layer-vector>
 
           <!-- trees WFS layer -->
+        <vl-layer-group>
           <vl-layer-vector id="trees" :visible="activeLayerIds.includes('trees')" :z-index="22">
             <vl-source-vector :url="urlFunction" :strategy-factory="loadingStrategyFactory" />
-            <vl-style-box>
-              <vl-style-circle :radius="10">
-                <vl-style-fill color="lightblue"></vl-style-fill>
-                <vl-style-stroke :color="[0, 0, 255]" :width="2"></vl-style-stroke>
-              </vl-style-circle>
-            </vl-style-box>
+            <vl-style-func :factory="treesStyleFunc" />
           </vl-layer-vector>
         </vl-layer-group>
 
@@ -100,15 +54,9 @@
               </vl-style-circle>
           </vl-style-box>
         </vl-interaction-select>
-
-        <!-- countries interaction -->
-        <vl-interaction-select
-            v-if="activeLayerIds.includes('countries')"
-            :condition="singleClick">
-        </vl-interaction-select>
-
       </vl-map>
     </div>
+
     <!-- trees information box -->
     <div v-if="activeLayerIds.includes('trees') && (selectedFeatures.length > 0 || hoveredFeatures.length > 0)" class="trees-box">
       <div v-if="selectedFeatures.length > 0" class="trees-box-inner">
@@ -137,20 +85,12 @@
         </ul>
       </div>
     </div>
-    <div v-if="activeLayerIds.includes('countries') && (selectedFeatures.length > 0)" class="layout-footer">
-       <ul>
-       <h4>Something</h4>
-        </ul>
-    </div>
-
-
   </div>
-
 </template>
 
 <script>
 import { singleClick, pointerMove } from "ol/events/condition";
-import { loadingBBox } from "vuelayers/lib/ol-ext";
+import { loadingBBox, createStyle } from "vuelayers/lib/ol-ext";
 
 export default {
   props: {
@@ -162,11 +102,13 @@ export default {
       baseUrl:
       process.env.NODE_ENV === "development" ? "http://carto19.ethz.ch" : "",
       center: [951000, 6002000],
-      zoom: 4,
+      zoom: 13,
       rotation: 0,
       activeTree: false,
       hoveredFeatures: [],
-      selectedFeatures: []
+      selectedFeatures: [],
+      countryName: ''
+
     };
   },
   computed: {
@@ -176,45 +118,57 @@ export default {
     pointerMove() {
       return pointerMove;
     },
+    treesStyleFunc () {
+      // we read selectedCountries here in order to restyle the features when selectedCountries changes
+      // (see https://github.com/ghettovoice/vuelayers/issues/68#issuecomment-404223423 for more information)
+      //       this.selectedCountries
+      // Thanks for your help, Michael!!
+      this.countryName
+      // the actual styling function factory
+      return () => {
+        // the default circleStyle that will be used by all visible features
+        const circleStyle = [createStyle({
+          imageRadius: 10,
+          strokeColor: [0, 0, 255],
+          strokeWidth: 2,
+          fillColor: "lightblue",
+        })];
+        return (feature) => {
+          // check if features should be filtered based on countryName
+          if(this.countryName && this.countryName.length > 0) {
+            const uniqueSelectedCountryNames = this.countryName;
+            if(uniqueSelectedCountryNames.includes(feature.values_.COUNTRY)) {
+              // features that matches countryName get the feafult circleStyle
+              return circleStyle;
+            } else {
+              // all other featres get an empty style (invisible)
+              return [];
+            }
+          } else {
+            return circleStyle;
+          }
+        }
+      }
+    },
+  },
+  created() {
+    this.$eventHub.$on('country-change', this.changeCountry);
   },
   methods: {
-    urlFunction(extent, resolution, projection) {
+    // Set the selected country name
+    changeCountry(country) {
+        this.countryName = country;
+    },
+    urlFunction(extents, resolution, projection) {
       return (
         "/geoserver/carto3/ows?service=WFS&version=1.1.0&request=GetFeature&typeName=carto3%3ABaumkataster&outputFormat=application%2Fjson" +
         "&srsname=" +
-        projection +
-        "&CQL_FILTER=COUNTRY=%27Romania%27"
-      );
-    },
-    urlFunction_countries(extent, resolution, projection) {
-      return (
-        "/geoserver/carto3/ows?service=WFS&version=1.1.0&request=GetFeature&typeName=carto3:world_borders&outputFormat=application%2Fjson" +
-        "&srsname=" +
-        projection +
-        "&bbox=" +
-        extent.join(",") +
-        "," +
         projection
       );
     },
-    debug (event) {
-        this.console.log(event.target.name)
-    },
     loadingStrategyFactory() {
-      return loadingBBox;
+        return loadingBBox;
     },
-    resize() {
-      if (
-        this.$refs["vl-map"] &&
-        this.$refs["vl-map"].updateSize &&
-        this.$refs["vl-map"].$map
-      ) {
-        this.$refs["vl-map"].updateSize();
-      }
-    },
-    treeActive: function() {
-        this.setAttribute("class", "tree-active");
-    }
   }
 };
 </script>
@@ -249,18 +203,4 @@ export default {
 .trees-box-inner {
   margin: 0 50px;
 }
-
-.tree-active {
-  color: red;
-}
-
-.tree-disabled {
-  color: white;
-}
-
-.transparent {
-   background-color: white!important;
-   opacity: 0.65;
-   border-color: transparent!important;
- }
 </style>

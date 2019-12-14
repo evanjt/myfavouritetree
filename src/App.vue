@@ -6,6 +6,7 @@
           <img alt="ETH Logo" src="./assets/ethz_logo_white.svg" />
         </Banner>
       </div>
+
       <div class="layout-body">
         <section class="layout-content">
           <Map
@@ -14,45 +15,45 @@
             ref="map"
           />
         </section>
+
         <div class="layout-sidebar-1 hg-sidebar">
-          <h3>Layers:</h3>
-          <Menu
-            :menuEntries="layers"
-            :activeEntries="activeLayerIds"
-            @activeEntryChanged="activeLayerChanged"
-          />
-          <h3>Basemaps:</h3>
-          <Menu
-            :menuEntries="basemaps"
-            :activeEntries="[activeBasemapId]"
-            @activeEntryChanged="activeBasemapChanged"
+          <center><h3>European countries</h3>
+          Select a country from the map below.
+          <br><br>
+          The trees planted in Zürich that are most commonly associated with the selected country will be displayed on the right</center>
+          <Menumap
+             :menuEntries="layers"
+             :activeEntries="activeLayerIds"
+             @activeEntryChanged="activeLayerChanged"
+             :activeBasemapId="activeBasemapId"
+             :activeLayerIds="menuMapLayerID"
+             ref="menu"
           />
         </div>
-        <transition
-          name="slide-fade"
-          v-on:enter="resizeMap"
-          v-on:after-leave="resizeMap"
-        >
-        </transition>
       </div>
 
       <div class="layout-footer">
-        <p>&copy; 2019 ETH Zürich</p>
+        <p>&copy; 2019 Evan Thomas</p>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+
 import Banner from "./components/Banner.vue";
-import Menu from "./components/Menu.vue";
+import Menumap from "./components/Menu.vue";
 import Map from "./components/Map.vue";
+import Vue from 'vue';
+
+// Set eventhub to allow the movement of variables from one component to the next.
+// This will be used for telling tha main map which country the menu map is clicked on
+Vue.prototype.$eventHub = new Vue();
 
 export default {
-  name: "app",
   components: {
     Banner,
-    Menu,
+    Menumap,
     Map
   },
   data() {
@@ -69,25 +70,14 @@ export default {
         }
       ],
       activeLayerIds: [],
+      menuMapLayerID: [],
       basemaps: [
         {
           id: "OSM",
           title: "OpenStreetMap (WMTS)"
-        },
-        {
-          id: "PKomb",
-          title: "Pixel Map without Relief (WMS)"
-        },
-        {
-          id: "PKrel",
-          title: "Pixel Map with Relief (IMAGE)"
-        },
-        {
-          id: "Hydro",
-          title: "Lakes and Rivers on Pixel Map (WMS - Combined)"
         }
-      ],
-      activeBasemapId: null
+    ],
+      activeBasemapId: "OSM"
     };
   },
   created() {
@@ -95,6 +85,7 @@ export default {
     this.activeBasemapId = this.basemaps[0].id;
     // add id of first layer to activeLayerIds
     this.activeLayerIds.push(this.layers[0].id);
+    this.menuMapLayerID.push(this.layers[1].id);
   },
   methods: {
     activeBasemapChanged(basemapId) {
